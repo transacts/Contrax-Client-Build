@@ -1,0 +1,2004 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Division Data - {{division_name}}</title>
+	<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.1.2/dist/tailwind.min.css" rel="stylesheet">
+	<style>
+	#data-table td {
+		border: 1px solid #ddd;
+	}
+
+    .data-table {
+        transform: rotateX(180deg);
+    }
+
+	.draggable-header {
+		cursor: move;
+	}
+
+	.draggable-header:active {
+		opacity: 0.5;
+	}
+
+	button:disabled,
+	button[disabled] {
+		background-color: #cccccc;
+		color: #666666;
+		cursor: not-allowed;
+	}
+
+	#closeModal {
+		color: #aaa;
+		position: absolute;
+		top: 0;
+		right: 20px;
+		font-size: 28px;
+		font-weight: bold;
+	}
+
+	#closeModal:hover,
+	#closeModal:focus {
+		color: black;
+		text-decoration: none;
+		cursor: pointer;
+	}
+
+	.note-modal-content {
+		background-color: #fefefe;
+		margin: 15% auto;
+		border: 1px solid #888;
+	}
+
+	.close-btn {
+		color: #aaa;
+		float: right;
+		font-size: 28px;
+		font-weight: bold;
+	}
+
+	.close-btn:hover,
+	.close-btn:focus {
+		color: black;
+		text-decoration: none;
+		cursor: pointer;
+	}
+
+	.modal-content {
+		background-color: #fefefe;
+		margin: 15% auto;
+		padding: 20px;
+		border: 1px solid #888;
+		width: 80%;
+	}
+
+	.close {
+		color: #aaa;
+		float: right;
+		font-size: 28px;
+		font-weight: bold;
+	}
+
+	.close:hover,
+	.close:focus {
+		color: black;
+		text-decoration: none;
+		cursor: pointer;
+	}
+
+	.modal-footer {
+		padding: 12px;
+		text-align: right;
+	}
+
+	.button {
+		border: none;
+		padding: 10px 20px;
+		margin: 5px;
+		cursor: pointer;
+		font-size: 16px;
+		border-radius: 5px;
+	}
+
+	.accept {
+		background-color: #4CAF50;
+		color: white;
+	}
+
+	.cancel {
+		background-color: #757575;
+		color: white;
+	}
+
+	.button:hover {
+		opacity: 0.8;
+	}
+       .email-list {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .email-item {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            background-color: #007BFF;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .email-item:hover .tooltip {
+            display: block;
+        }
+
+        .tooltip {
+            display: none;
+            position: absolute;
+            top: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: black;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            white-space: nowrap;
+        }
+		.sheet-dropdown-menu {
+            display: none;
+            position: absolute;
+            background-color: white;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            z-index: 1;
+        }
+
+        .sheet-dropdown-menu button {
+            padding: 8px 16px;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+        }
+
+        .sheet-dropdown-menu button:hover {
+            background-color: #f1f1f1;
+        }
+
+        .tableContainer {
+            transform: rotateX(180deg);
+        }
+
+	</style>
+</head>
+
+<body class="bg-gray-100">
+	<nav class="bg-white shadow">
+		<div class="mx-auto px-6 py-3">
+			<div class="flex items-center justify-between">
+				<div class="text-xl font-semibold text-gray-700">
+					<a class="text-gray-800" href="/dashboard">Contrax</a>
+				</div>
+				<div class="flex items-center">
+					<span class="mx-2 text-gray-600 text-sm">Welcome, {{ user_email }}</span>
+					<button id="lateTasksAlertBtn" class="px-4 py-2 text-white bg-red-500 rounded hover:bg-red-600 focus:outline-none mr-2">Alerts</button>
+					<a href="/settings" class="px-4 py-2 text-white bg-gray-500 rounded hover:bg-gray-600 focus:outline-none mr-2">Settings</a>
+					<a href="/logout" class="px-4 py-2 text-white bg-blue-500 rounded hover:bg-blue-600 focus:outline-none">Logout</a>
+				</div>
+			</div>
+		</div>
+	</nav>
+	<div class="container mx-auto mt-5">
+		<h1 class="text-2xl font-bold mb-5">Division Data: {{division_name}}</h1>
+
+		<div class="email-list">
+            <!-- <button class="bg-blue-500 text-white font-bold py-2 px-4 rounded">Directory</button> --> 
+			{% for email in authorized_emails %}
+				{% if email is string %}
+					<div class="email-item">
+						{{ email[0] | upper }}
+						<div class="tooltip">{{ email }}</div>
+					</div>
+				{% elif email is mapping %}
+					<div class="email-item">
+						{{ email['email'][0] | upper }}
+						<div class="tooltip">{{ email['email'] }}<br>Role: {{ email['role'] }}<br>Company: {{ email['company'] }}</div>
+					</div>
+				{% endif %}
+			{% endfor %}
+		</div>
+        <div class="search-container py-4">
+            <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Search..." class="p-2 border border-gray-300 rounded">
+        </div>
+		<div class="mb-4">
+		<button id="addRowButton" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+				Add Row
+			</button>
+			<button id="submitDataButton" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+				Submit Data
+			</button>
+			<button id="inviteToggle" class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded">
+				Invite Users
+			</button>
+			<button id="upcomingDeliveriesButton" class="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded">
+				Upcoming Deliveries
+			</button>
+			<button id="uploadBtn" class="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">
+				Upload File (CSV, Excel)
+			</button>
+			<div id="uploadModal" class="hidden fixed inset-0 z-10 overflow-auto bg-black bg-opacity-40">
+				<div class="bg-white rounded-lg shadow-lg m-auto p-6 border border-gray-200 w-4/5 md:w-1/2 lg:w-1/3 mt-20">
+					<span id="closeModal" class="text-gray-400 float-right text-3xl font-bold cursor-pointer hover:text-gray-600">&times;</span>
+					<h2 class="text-xl font-semibold mb-4">Upload CSV</h2>
+					<input type="file" id="csvFileUpload" accept=".xls, .xlsx, .csv" class="block w-full text-sm text-gray-500
+                file:mr-4 file:py-2 file:px-4
+                file:border-0
+                file:text-sm file:font-semibold
+                file:bg-blue-50 file:text-blue-700
+                hover:file:bg-blue-100
+                " />
+					<button id="uploadFileAcceptBtn" class="bg-green-500 text-white font-bold py-2 px-4 rounded mt-4" disabled>
+						Accept File
+					</button>
+                    <button id="uploadFileCancelBtn" class="bg-red-500 text-white font-bold py-2 px-4 rounded mt-4">
+                        Cancel
+                    </button>
+				</div>
+			</div>
+			<div id="inviteSection" class="collapse-content mt-4 bg-white p-4 rounded shadow-md" style="display: none;">
+				<div class="flex justify-end">
+					<button type="button" onclick="closeInviteSection()" class="text-gray-600 hover:text-gray-900">&times;</button>
+				</div>
+				<div id="email-role-container-invite" class="w-full mb-2">
+					<div class="flex items-center mb-2">
+                        <input type="email" id="inviteEmail" name="inviteEmail" placeholder="Enter Email" class="p-2 border rounded-md mr-2 w-1/2" required>
+                        <input type="text" id="inviteCompanyName" name="inviteCompanyName" placeholder="Company Name" class="p-2 border rounded-md mr-2 w-1/2" required>
+                        <select id="inviteRole" name="inviteRole" class="p-2 border rounded-md mr-2 w-1/3">
+                            <option value="" disabled selected>Select Role</option>
+                            {% for role in roles %}
+                                <option value="{{ role }}">{{ role }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="button" onclick="removeEmailRoleRow(this)" class="bg-red-500 text-white px-2 py-1 rounded">Remove</button>
+					</div>
+				</div>
+				<button type="button" onclick="addEmailRoleRow('invite')" class="bg-blue-500 text-white px-4 py-2 rounded">Add Email/Role</button>
+				<button id="sendInvites" class="mt-2 px-4 py-2 text-white bg-green-500 rounded hover:bg-green-600">Send Invites</button>
+			</div>
+		</div>
+	</div>
+
+    <div id="uploadNoteModal" class="hidden fixed inset-0 z-10 overflow-auto bg-black bg-opacity-40">
+        <div class="bg-white rounded-lg shadow-lg m-auto p-6 border border-gray-200 w-4/5 md:w-1/2 lg:w-1/3 mt-20">
+            <span id="closeNoteModal" class="text-gray-400 float-right text-3xl font-bold cursor-pointer hover:text-gray-600">&times;</span>
+            <h2 class="text-xl font-semibold mb-4">Upload Notes</h2>
+            <p>You can upload a file with notes for this division here.</p>
+            <p>File types accepted: .txt, .doc, .docx, .pdf</p>
+            <input type="file" id="noteFileUpload" accept=".txt, .doc, .docx, .pdf" class="block w-full text-sm text-gray-500
+        file:mr-4 file:py-2 file:px-4
+        file:border-0
+        file:text-sm file:font-semibold
+        file:bg-blue-50 file:text-blue-700
+        hover:file:bg-blue-100
+        " />
+            <button id="uploadNoteFileAcceptBtn" class="bg-green-500 text-white font-bold py-2 px-4 rounded mt-4" disabled>
+                Accept File
+            </button>
+            <button id="uploadNoteFileCancelBtn" class="bg-red-500 text-white font-bold py-2 px-4 rounded mt-4">
+                Cancel
+            </button>
+        </div>
+    </div>
+
+    <div class="mx-auto p-4">
+        <div class="flex space-x-4 border-b-2 border-gray-300" id="tabs">
+		    <div class="relative">
+                <button class="py-2 px-4 text-gray-700 border-b-2 border-blue-500 font-semibold focus:outline-none flex items-center" onclick="showSheet('Uncategorized')">
+					<span id="Uncategorized-name">Uncategorized</span>
+                    <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" onclick="toggleDropdown('dropdownMenu1')">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </button>
+                <div class="sheet-dropdown-menu mt-2 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5" id="dropdownMenu1">
+                    <button class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onclick="editSheetName('Uncategorized')">Edit Name</button>
+					<!-- I want to do this but for now it's fine -->
+                    <!-- <button class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onclick="changeSheetColor('Uncategorized')">Change Color</button> -->
+                </div>
+			</div>
+            <button id="addSheetButton" class="py-2 px-4 text-gray-700 border-b-2 border-transparent hover:border-gray-300 font-semibold focus:outline-none {{ 'disabled' if role not in ['General Contractor', 'Subcontractor'] else '' }}" onclick="addSheet()">+ Add Sheet</button>
+        </div>
+
+		<div class="sheetContainer">
+			<div id="Uncategorized" class="sheet-content mt-4">
+				<div class="tableContainer">
+					<div class="bg-white shadow-md rounded my-6 overflow-x-auto">
+						<table class="min-w-full table-auto border-collapse border border-gray-300 data-table" id="data-table-sheet1">
+							<thead>
+								<tr class="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
+									<!-- Headers -->
+                                    <th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">Priority</th>
+									<th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">Name/Description</th>
+									<th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">Quantity</th>
+                                    <th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">Draw Down Accounting</th>
+									<th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">Unit</th>
+									<th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">Lead Time</th>
+									<th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">Needed On-site</th>
+									<th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">Manufacturing Time</th>
+									<th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">ETA Delivery</th>
+									<th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">Manufacturer</th>
+									<th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">Fabrication</th>
+									<th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">Delivery Location</th>
+									<th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">Tracking Number</th>
+									<th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">Notes</th>
+									<th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">Total Lead Time Analysis</th>
+									<th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">Shipped</th>
+									<th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">Delivered</th>
+									<th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">Attach File</th>
+								</tr>
+							</thead>
+							<tbody>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
+    </div>
+
+	<div id="noteModal" class="note-modal hidden fixed inset-0 z-10 overflow-auto bg-black bg-opacity-40">
+		<div class="bg-white rounded-lg shadow-lg m-auto border border-gray-200 w-4/5 mt-20">
+			<div class="note-modal-content">
+				<span class="close">&times;</span>
+				<form id="noteForm">
+					<p>Add a Note</p>
+					<textarea id="noteText" placeholder="Add a comment..."></textarea>
+					<button class="button accept" id="saveNote">Save Note</button>
+				</form>
+			</div>
+		</div>
+	</div>
+	<div id="CSVUploadModal" class="hidden fixed inset-0 z-10 overflow-auto bg-black bg-opacity-40">
+		<div class="bg-white rounded-lg shadow-lg m-auto border border-gray-200 w-4/5 mt-20">
+			<div class="modal-content">
+				<span class="close">&times;</span>
+				<h2>Uploaded File Data</h2>
+				<table id="modal-preview-data-table" class="min-w-full table-auto border-collapse border border-gray-300">
+					<thead>
+						<tr class="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
+                            <th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">Priority</th>
+							<th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">Name/Description</th>
+							<th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">Quantity</th>
+                            <th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">Draw Down Accounting</th>
+							<th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">Unit</th>
+							<th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">Lead Time</th>
+							<th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">Needed On-site</th>
+							<th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">Manufacturing Time</th>
+							<th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">ETA Delivery</th>
+							<th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">Manufacturer</th>
+							<th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">Fabrication</th>
+							<th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">Delivery Location</th>
+							<th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">Tracking Number</th>
+							<th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">Notes</th>
+							<th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">Total Lead Time Analysis</th>
+                            <th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">Shipped</th>
+                            <th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">Delivered</th>
+                            <th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">Attach File</th>
+						</tr>
+					</thead>
+				</table>
+				<div class="modal-footer">
+					<button id="acceptBtn" class="button accept">Accept Data & Insert</button>
+					<button id="cancelBtn" class="button cancel">Cancel</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+    <div id="drawDownModal" class="hidden fixed inset-0 z-10 overflow-auto bg-black bg-opacity-40">
+        <div class="bg-white rounded-lg shadow-lg m-auto border border-gray-200 w-4/5 mt-20">
+            <div class="modal-content">
+                <span id="closeDrawDown" class="close">&times;</span>
+                <h2>Draw Down Accounting</h2>
+                <div class="flex justify-between">
+                    <button id="addDrawDownButton" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">Add Draw Down</button>
+                </div>
+
+                <div id="addDrawDownSection" class="hidden">
+                    <div class="flex items">
+                        <select id="drawDownAction" class="p-2 border rounded-md mr-2">
+                            <option value="" disabled selected>Action Taken</option>
+                            <option value="Draw Down">Draw Down</option>
+                            <option value="Return">Return</option>
+                        </select>
+                        <input type="number" id="drawDownAmount" placeholder="Amount" class="p-2 border rounded-md mr-2">
+                        <input type="text" id="drawDownDescription" placeholder="Description/Note" class="p-2 border rounded-md mr-2">
+                        <input type="date" id="drawDownDate" class="p-2 border rounded-md mr-2">
+                        <button id="submitDrawDown" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Submit</button>
+                    </div>
+                </div>
+                <h2>Draw Down History</h2>
+                <table id="drawDownTable" class="min-w-full table-auto border-collapse border border-gray-300">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Name</th>
+                            <th>Action Taken</th>
+                            <th>Amount</th>
+                            <th>Description/Note</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+	<!-- For the excel file import SheetJS -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.5/xlsx.full.min.js"></script>
+	<!-- Sanitize input with DOMPurify -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.0/purify.min.js" integrity="sha512-ZCsRHqhdDXrq4iTXVZLkGBsOfDlvhvHhEMQlCosf9Oqy1p6xizF1LSWa6uuISGqeh9PmCzfneGcYZvc9t/hjaQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+	<script src="{{ url_for('static', filename='js/divisions_data.js') }}"></script>
+	<script>
+    // global to track if shipped or delivered is changed
+    // format {"shipped": row, "delivered": row}
+    let notificationEmail = {"shipped": [], "delivered": []};
+
+function addEmailRoleRow(containerId) {
+    const container = document.getElementById('email-role-container-' + containerId);
+    const newRow = document.createElement('div');
+    newRow.className = 'flex items-center mb-2';
+    newRow.innerHTML = `
+      <input type="email" name="inviteEmail" placeholder="Enter email" class="p-2 border rounded-md mr-2 w-1/2">
+      <input type="text" name="inviteCompanyName" placeholder="Company Name" class="p-2 border rounded-md mr-2 w-1/2">
+        <select id="inviterole" name="inviteRole" class="p-2 border rounded-md mr-2 w-1/3">
+            <option value="" disabled selected>select role</option>
+            {% for role in roles %}
+                <option value="{{ role }}">{{ role }}</option>
+            {% endfor %}
+        </select>
+      <button type="button" onclick="removeEmailRoleRow(this)" class="bg-red-500 text-white px-2 py-1 rounded">Remove</button>
+    `;
+    container.appendChild(newRow);
+}
+
+function removeEmailRoleRow(button) {
+    const row = button.parentNode;
+    row.parentNode.removeChild(row);
+}
+
+document.getElementById('cancelBtn')
+    .onclick = function() {
+        const modal = document.getElementById('CSVUploadModal');
+        modal.style.display = "none";
+    };
+
+function openCSVUploadPreview() {
+    var modal = document.getElementById("CSVUploadModal")
+    var span = document.getElementsByClassName("close")[0];
+    btn.onclick = function() {
+        modal.style.display = "block";
+    }
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+    }
+}
+
+function getColumnIndices(table) {
+    const headerRow = table.rows[0];
+    const indices = {};
+    for (let i = 0; i < headerRow.cells.length; i++) {
+        const headerText = headerRow.cells[i].textContent.trim();
+        indices[headerText] = i;
+    }
+    return indices;
+}
+// Probably going to want to leave this to the database or backend to calculate
+function updateTotalLeadTimeAnalysis(row) {
+    if (typeof row === 'undefined') {
+        return;
+    }
+    const table = row.closest('table');
+    const indices = getColumnIndices(table);
+    const neededOnSiteIndex = indices['Needed On-site'];
+    const etaDeliveryIndex = indices['ETA Delivery'];
+    const totalLeadTimeAnalysisIndex = indices['Total Lead Time Analysis'];
+    if (neededOnSiteIndex === undefined || etaDeliveryIndex === undefined) {
+        console.error('Column headers "Needed On-Site" or "ETA Delivery" not found.');
+        return;
+    }
+    const neededOnSite = new Date(row.cells[neededOnSiteIndex]?.childNodes[3]?.value);
+    const etaDelivery = new Date(row.cells[etaDeliveryIndex]?.childNodes[3]?.value);
+    const analysisResult = (etaDelivery <= neededOnSite) ? 'On Time' : 'Late';
+    row.cells[totalLeadTimeAnalysisIndex].textContent = analysisResult;
+}
+document.getElementById('uploadBtn')
+    .addEventListener('click', function() {
+        document.getElementById('uploadModal')
+            .style.display = 'block';
+    });
+document.getElementById('closeModal')
+    .addEventListener('click', function() {
+        document.getElementById('uploadModal')
+            .style.display = 'none';
+    });
+
+const uploadFileCancelBtn = document.getElementById('uploadFileCancelBtn');
+uploadFileCancelBtn.onclick = function() {
+    document.getElementById('uploadModal')
+        .style.display = 'none';
+};
+
+window.onclick = function(event) {
+    const modal = document.getElementById('uploadModal');
+    if (event.target == modal) {
+        modal.style.display = 'none';
+    }
+}
+function escapeSelector(str) {
+	var newString = str.replace(/[^A-Z0-9]+/ig, "_");
+    return newString;
+}
+function validateUploadedData(worksheet) {
+    return true;
+}
+
+function fixDateOffset(cellValue) {
+    return new Date(cellValue.getTime() + (24 * 60 * 60 * 1000));
+}
+
+function handleFile(e) {
+    const file = e.target.files[0];
+    if (!file) {
+        return;
+    }
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        const data = event.target.result;
+        let workbook;
+        const maxFileSize = 2 * 1024 * 1024;
+        if (file.size > maxFileSize) {
+            alert('File size should not exceed 2MB');
+            return;
+        }
+        const validTypes = ['application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'text/csv'];
+        if (!validTypes.includes(file.type)) {
+            alert('Invalid file type. Only Excel and CSV files are allowed.');
+            return;
+        }
+        const clean = DOMPurify.sanitize(data);
+        let res;
+        workbook = XLSX.read(data, {
+            type: 'binary',
+            cellDates: true
+        });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        if (!validateUploadedData(worksheet)) {
+            alert('Invalid data format');
+            return;
+        }
+        const jsonWorksheet = XLSX.utils.sheet_to_json(worksheet, {
+            header: 1,
+            raw: false
+        });
+        const headers = jsonWorksheet[0];
+        res = jsonWorksheet.slice(1)
+            .map(row => {
+                let obj = {};
+                row.forEach((cell, index) => {
+                    obj[headers[index]] = cell;
+                });
+                return obj;
+            });
+        let associativeData;
+        const uploadFileAcceptBtn = document.getElementById('uploadFileAcceptBtn');
+        uploadFileAcceptBtn.disabled = false;
+        uploadFileAcceptBtn.onclick = function() {
+            document.getElementById('uploadModal')
+                .style.display = 'none';
+            document.getElementById('CSVUploadModal')
+                .style.display = 'block';
+            const table = document.getElementById('modal-preview-data-table')
+            const headers = Array.from(table.querySelectorAll('th'))
+                .map(th => th.textContent.trim()
+                    .toLowerCase());
+            const newRow = table.insertRow(-1);
+            headers.forEach(header => {
+                const cell = newRow.insertCell();
+                const matchingKey = substringMatchHeaderToObjectKey(header, res);
+                let value = matchingKey ? res[0][matchingKey] : '';
+                cell.textContent = value;
+            });
+            document.getElementById('acceptBtn')
+                .onclick = function() {
+                    const modal = document.getElementById('CSVUploadModal');
+                    const tableBody = getCurrentTable().querySelector('tbody');
+                    const modalTable = document.getElementById('modal-preview-data-table');
+                    Array.from(modalTable.rows)
+                        .slice(1)
+                        .forEach(row => {
+                            var newRow = row.cloneNode(true);
+                            tableBody.appendChild(newRow);
+                        });
+                    modal.style.display = "none";
+                };
+        }
+    };
+    reader.readAsBinaryString(file);
+}
+
+function normalizeString(str) {
+    return str.toLowerCase()
+        .replace(/[^a-z0-9]/gi, '');
+}
+
+function substringMatchHeaderToObjectKey(header, object) {
+    const normalizedHeader = normalizeString(header);
+    const objectKeys = Object.keys(object[0]);
+    let bestMatch = null;
+    let longestMatchLength = 0;
+    objectKeys.forEach(key => {
+        const normalizedKey = normalizeString(key);
+        if (normalizedKey.includes(normalizedHeader) || normalizedHeader.includes(normalizedKey)) {
+            const matchLength = Math.min(normalizedHeader.length, normalizedKey.length);
+            if (matchLength > longestMatchLength) {
+                longestMatchLength = matchLength;
+                bestMatch = key;
+            }
+        }
+    });
+    return bestMatch;
+}
+
+function parseTableRow(row) {
+    const headers = ['priority', 'name/description', 'quantity', 'unit', 'lead time', 'needed on-site', 'manufacturing time', 'eta delivery', 'manufacturer', 'fabrication', 'delivery location', 'tracking number', 'notes', 'total lead time analysis', 'shipped', 'delivered', 'attach file'];
+    const rowData = {};
+    const cells = row.querySelectorAll('td');
+
+    headers.forEach((header, index) => {
+        if (typeof cells[index] !== 'undefined') {
+            const input = cells[index].querySelector('input');
+            const select = cells[index].querySelector('select');
+            const checkbox = cells[index].querySelector('input[type="checkbox"]');
+            const cellValue = checkbox ? checkbox.checked : input ? input.value : select ? select.value : cells[index].textContent.trim();
+            switch (header) {
+                case 'priority':
+                    rowData['priority'] = cellValue;
+                    break;
+                case 'name/description':
+                    rowData['name'] = cellValue;
+                    break;
+                case 'quantity':
+                    rowData['quantity'] = cellValue;
+                    break;
+                case 'unit':
+                    rowData['unit'] = cellValue;
+                    break;
+                case 'lead time':
+                    rowData['leadTime'] = cellValue;
+                    break;
+                case 'needed on-site':
+                    rowData['neededOnsite'] = cellValue;
+                    break;
+                case 'manufacturing time':
+                    rowData['manufacturingTime'] = cellValue;
+                    break;
+                case 'eta delivery':
+                    rowData['etaDelivery'] = cellValue;
+                    break;
+                case 'manufacturer':
+                    rowData['manufacturer'] = cellValue;
+                    break;
+                case 'fabrication':
+                    rowData['fabrication'] = cellValue;
+                    break;
+                case 'delivery location':
+                    rowData['deliveryLocation'] = cellValue;
+                    break;
+                case 'tracking number':
+                    rowData['trackingNumber'] = cellValue;
+                    break;
+                case 'notes':
+                    rowData['notes'] = cells[index].querySelector('.noteText') ? cells[index].querySelector('.noteText')
+                        .textContent.trim() : '';
+                    break;
+                case 'total lead time analysis':
+                    rowData['totalLeadTimeAnalysis'] = cellValue;
+                    break;
+                case 'shipped':
+                    rowData['shipped'] = cellValue;
+                    break;
+                case 'delivered':
+                    rowData['delivered'] = cellValue;
+                    break;
+                case 'attach file':
+                    rowData['attachFile'] = cells[index].querySelector('.fileNameText') ? cells[index].querySelector('.fileNameText')
+                        .textContent.trim() : '';
+                    break;
+                default:
+                    rowData[header] = cellValue;
+                    break;
+            }
+        } else {
+            rowData[header] = '';
+        }
+    });
+
+    return rowData;
+}
+
+document.getElementById('csvFileUpload')
+    .addEventListener('change', function(event) {
+        handleFile(event);
+    });
+
+function uploadNoteFile() {
+    const urlParts = window.location.pathname.split('/');
+    const projectName = urlParts[2];
+    const divisionName = urlParts[3];
+
+    try {
+        let formData = new FormData();
+        let i = 0;
+        for (const [key, value] of Object.entries(uploadedFiles)) {
+            const parsedRow = parseTableRow(value.row);
+            let jsonData = JSON.stringify({
+                // gatherRowsData returns the data we need here. But we just need it for the one row
+                "row": parsedRow
+            });
+            formData.append(`row${i}`, jsonData);
+            formData.append(`file${i}`, value.file);
+            i++;
+        }
+
+        const response = fetch(`/uploadNoteFiles/${projectName}/${divisionName}/data`, {
+                method: 'POST',
+                body: formData,
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert('File uploaded successfully');
+                } else {
+                    alert('Error uploading file');
+                }
+            })
+    } catch (error) {
+        console.error("Error:" + error);
+    };
+}
+
+let selectedRow;
+let uploadedFiles = {};
+let currentFile;
+
+function validateNoteFile(e) {
+    e.preventDefault();
+    // You have to show the modal first before you can upload a file
+    const file = e.target.files[0];
+    if (!file) {
+        return false;
+    }
+    const maxFileSize = 2 * 1024 * 1024;
+    if (file.size > maxFileSize) {
+        alert('File size should not exceed 2MB');
+        return false;
+    }
+    const validTypes = ["application/msword", "text/plain", "application/pdf"];
+    if (!validTypes.includes(file.type)) {
+        alert('Invalid file type. Only text files are allowed.');
+        return false;
+    }
+    return true;
+}
+
+function openAttachNoteFileModal(row) {
+    var modal = document.getElementById("uploadNoteModal");
+    var span = document.getElementById("closeNoteModal");
+    span.onclick = function() {
+        modal.style.display = "none";
+    }
+    document.getElementById('uploadNoteFileCancelBtn')
+        .onclick = function() {
+            modal.style.display = "none";
+        }
+
+    modal.style.display = "block";
+
+    let acceptButton = document.getElementById('uploadNoteFileAcceptBtn');
+    acceptButton.disabled = true;
+    acceptButton.addEventListener('click', function(e) {
+		const table = getCurrentTable();
+        const indices = getColumnIndices(table);
+        const noteFileIndex = indices['Attach File'];
+
+        // Select the attach file column in the row that was clicked using the noteFileIndex adn set it to the file name
+        // Potential for race condition here if the user clicks on another row before the file is uploaded
+        selectedRow.cells[noteFileIndex].querySelector('.fileNameText')
+            .textContent = currentFile.name;
+        selectedRow.cells[noteFileIndex].querySelector('.attach-file-btn')
+            .style.display = 'none';
+
+        modal.style.display = "none";
+    });
+}
+
+document.getElementById('noteFileUpload')
+    .addEventListener('change', function(event) {
+        if (validateNoteFile(event)) {
+            currentFile = event.target.files[0];
+            uploadedFiles[currentFile.name] = {
+                "row": selectedRow,
+                "file": event.target.files[0]
+            };
+            document.getElementById('uploadNoteFileAcceptBtn')
+                .disabled = false;
+        }
+    });
+
+function parseCSVDataAndInsertIntoTable(csvData) {
+    const rows = csvData.split('\n')
+        .map(row => row.split(','));
+    const tableBody = getCurrentTable().querySelector('tbody');
+    tableBody.innerHTML = '';
+    rows.forEach((row, index) => {
+        if (row.length === 11) {
+            const html = `<tr>${row.map(cell => `<td class="py-3 px-6 border border-gray-300 text-left">${cell.trim()}</td>`).join('')}</tr>`;
+            tableBody.innerHTML += html;
+        }
+    });
+}
+document.addEventListener('DOMContentLoaded', (event) => {
+    var modal = document.getElementById("noteModal");
+    var btns = document.querySelectorAll(".add-note-btn");
+    btns.forEach(function(btn) {
+        btn.onclick = function() {
+            modal.style.display = "block";
+        }
+    });
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+    }
+    document.getElementById("noteForm")
+        .onsubmit = function(event) {
+            event.preventDefault();
+            var noteText = document.getElementById("noteText")
+                .value;
+            var timestamp = new Date()
+                .toISOString();
+            modal.style.display = "none";
+        };
+    const headers = document.querySelectorAll('.draggable-header');
+    let dragStartIndex;
+
+    function swapColumns(startIndex, endIndex) {
+        const table = getCurrentTable();
+        const rows = table.querySelectorAll('tr');
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('th, td');
+            if (cells.length > startIndex && cells.length > endIndex) {
+                const temp = cells[startIndex].outerHTML;
+                cells[startIndex].outerHTML = cells[endIndex].outerHTML;
+                cells[endIndex].outerHTML = temp;
+            }
+        });
+    }
+
+    function dragStart() {
+        dragStartIndex = this.cellIndex;
+    }
+
+    function dragOver(e) {
+        e.preventDefault();
+    }
+
+    function drop() {
+        const dragEndIndex = this.cellIndex;
+        swapColumns(dragStartIndex, dragEndIndex);
+    }
+    headers.forEach(header => {
+        header.addEventListener('dragstart', dragStart);
+        header.addEventListener('dragover', dragOver);
+        header.addEventListener('drop', drop);
+    });
+
+    // Set up the adding notes functionality
+    var noteModal = document.getElementById('noteModal');
+    var noteText = document.getElementById('noteText');
+    var saveNoteBtn = document.getElementById('saveNote');
+    var currentRow;
+
+    getCurrentTable().addEventListener('click', function(event) {
+		if (event.target.classList.contains('attach-file-btn')) {
+                // get the row that was clicked
+                row = event.target.closest('tr');
+                selectedRow = row;
+                openAttachNoteFileModal();
+        } else if (event.target.classList.contains('add-note-btn')) {
+            currentRow = event.target.closest('tr');
+            let currentText = currentRow.querySelector('.noteText');
+            if (currentText.textContent !== '') {
+                noteText.value = currentText.textContent;
+                saveNoteBtn.textContent = 'Edit Note';
+            } else {
+                noteText.value = ''; // Clear previous note
+                saveNoteBtn.textContent = 'Save Note';
+            }
+            noteModal.style.display = "block";
+        } else if (event.target.classList.contains('draw-down-cell')) {
+            let currentRow = event.target.closest('tr');
+            showDrawDownModal(currentRow);
+        }
+    });
+
+    // Save note and attach it to the current row
+    saveNoteBtn.addEventListener('click', function() {
+        var note = noteText.value;
+        // Note has to be between 1 and 500 characters
+        if (note.length > 0 && note.length < 500) {
+            currentRow.querySelector('.noteText')
+                .textContent = note;
+            let btn = currentRow.querySelector('.add-note-btn')
+            btn.textContent = 'Edit Note';
+            btn.style.color = 'blue';
+            noteModal.style.display = "none";
+        } else {
+            // make this so that it shows a message on the modal itself
+            if (note.length === 0) {
+                alert('Note cannot be empty');
+            } else {
+                alert('Note cannot be longer than 500 characters');
+            }
+            return;
+        }
+    });
+});
+
+function moveTableColumns() {
+    const table = getCurrentTable();
+    const rows = Array.from(table.querySelectorAll('tr'));
+    rows.forEach(row => {
+        const cells = Array.from(row.querySelectorAll('td'));
+        cells.forEach((cell, index) => {
+            if (index === 0) {
+                row.appendChild(cell);
+            }
+        });
+    });
+}
+
+function guessCarrier(trackingNumber) {
+    const upsPattern = /^1Z[0-9A-Z]{16}$/;
+    const uspsPattern = /^(94|93|92|94|95)[0-9]{20}$/;
+    if (upsPattern.test(trackingNumber)) {
+        return 'UPS';
+    } else if (uspsPattern.test(trackingNumber)) {
+        return 'USPS';
+    } else {
+        return 'Unknown';
+    }
+}
+document.getElementById('upcomingDeliveriesButton')
+    .addEventListener('click', function() {
+        const trackingNumbers = Array.from(getCurrentTable().querySelectorAll('tbody tr'))
+            .map(tr => {
+                const trackingNumber = tr.querySelector('td:nth-child(11) input')
+                    .value;
+                return {
+                    tracking_number: trackingNumber,
+                    carrier: guessCarrier(trackingNumber)
+                };
+            })
+            .filter(tn => tn.tracking_number && tn.carrier !== 'Unknown');
+        fetch('/track-shipment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    trackingNumbers
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);
+                data.deliveryDates.forEach((delivery, index) => {
+                    if (delivery.error) {
+                        alert(`Error for ${trackingNumbers[index].tracking_number}: ${delivery.error}`);
+                    } else {
+                        const row = getCurrentTable().querySelectorAll('tbody tr')[index]
+							.children[index];
+                        const deliveryDateCell = row.insertCell(-1);
+                        deliveryDateCell.textContent = delivery.deliveryDate || 'N/A';
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+    });
+
+function downloadNoteFile(filePath) {
+    if (filePath !== '') {
+        const fileUrl = '/downloadNoteFile';
+        // You can create an anchor element to simulate the file download
+        // create a fetch with filePath in the body
+
+        fetch(fileUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    filePath
+                }),
+            })
+            .then(response => {
+                if (response.ok) {
+                    // view the response as a file in new tab
+                    return response.blob();
+                } else {
+                    alert('Error downloading file');
+                }
+            })
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const newTab = window.open(url, '_blank');
+                newTab.focus();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+    }
+}
+
+function formatDate(date) {
+    if (Object.prototype.toString.call(date) === "[object Date]") {
+        if (isNaN(date)) {
+            return false
+        } else {
+            // date object is valid
+            const day = date.getDate() + 1
+            const month = date.getMonth() + 1
+            const year = date.getFullYear()
+            return `${month}/${day}/${year}`;
+        }
+    } else {
+        return false;
+    }
+}
+function showDrawDownModal(row) {
+    const modal = document.getElementById('drawDownModal');
+    const drawDownSection = document.getElementById('addDrawDownSection');
+    const toggleDrawDownSection = document.getElementById('addDrawDownButton');
+    const submitDrawDown = document.getElementById('submitDrawDown');
+    const drawDownAction = document.getElementById('drawDownAction');
+    const drawDownAmount = document.getElementById('drawDownAmount');
+    const drawDownDescription = document.getElementById('drawDownDescription');
+    const drawDownDate = document.getElementById('drawDownDate');
+    const drawDownTable = document.getElementById('drawDownTable');
+
+    toggleDrawDownSection.addEventListener('click', function() {
+        drawDownSection.style.display = drawDownSection.style.display === "none" ? "block" : "none"; 
+    });
+
+    const drawDownHistoryDiv = row.querySelector('.drawdown-data');
+    const drawDownHistory = JSON.parse(drawDownHistoryDiv.textContent || '[]');
+
+    drawDownTable.innerHTML = '';
+    drawDownHistory.forEach(entry => {
+        const newRow = drawDownTable.insertRow();
+        newRow.innerHTML = `
+            <td class="py-3 px-6 border border-gray-300 text-left">${entry.date}</td>
+            <td class="py-3 px-6 border border-gray-300 text-left">${entry.user}</td>
+            <td class="py-3 px-6 border border-gray-300 text-left">${entry.action}</td>
+            <td class="py-3 px-6 border border-gray-300 text-left">${entry.amount}</td>
+            <td class="py-3 px-6 border border-gray-300 text-left">${entry.description}</td>
+        `;
+    });
+
+    submitDrawDown.addEventListener('click', function() {
+        const newRow = drawDownTable.insertRow();
+        const formattedDate = formatDate(new Date(drawDownDate.value));
+        if (!formattedDate) {
+            alert('Please enter a valid date');
+            return;
+        }
+        const username = '{{ user_email }}';
+        const entry = {
+            date: formattedDate,
+            user: username,
+            action: drawDownAction.value,
+            amount: drawDownAmount.value,
+            description: drawDownDescription.value
+        };
+
+        drawDownHistory.push(entry);
+        drawDownHistoryDiv.textContent = JSON.stringify(drawDownHistory);
+
+        newRow.innerHTML = `
+            <td class="py-3 px-6 border border-gray-300 text-left">${entry.date}</td>
+            <td class="py-3 px-6 border border-gray-300 text-left">${entry.user}</td>
+            <td class="py-3 px-6 border border-gray-300 text-left">${entry.action}</td>
+            <td class="py-3 px-6 border border-gray-300 text-left">${entry.amount}</td>
+            <td class="py-3 px-6 border border-gray-300 text-left">${entry.description}</td>
+        `;
+
+        // Update the latest drawdown entry in the table row
+        const latestDrawDownEntry = `${entry.user} - ${entry.action} - ${entry.amount}`;
+        row.querySelector('.drawDownAccountingText').textContent = latestDrawDownEntry;
+
+        drawDownAction.value = "";
+        drawDownAmount.value = "";
+        drawDownDescription.value = "";
+        drawDownDate.value = "";
+    });
+
+    document.getElementById('closeDrawDown')
+        .addEventListener('click', function() {
+            drawDownTable.innerHTML = '';
+            modal.style.display = 'none';
+        });
+
+    modal.style.display = 'block';
+}
+
+
+document.addEventListener('DOMContentLoaded', function() {
+	const tableBody = getCurrentTable().querySelector('tbody');
+    const addRowButton = document.getElementById('addRowButton');
+    const submitDataButton = document.getElementById('submitDataButton');
+    const inviteToggle = document.getElementById('inviteToggle');
+    const inviteSection = document.getElementById('inviteSection');
+    const sendInvitesButton = document.getElementById('sendInvites');
+
+    function addRow(data = {}, tableBody) {
+		if (typeof tableBody === 'undefined') {
+			tableBody = getCurrentTable().querySelector('tbody');
+		}
+        const newRow = tableBody.insertRow();
+
+        let drawDownHistory = [];
+        let latestDrawDownEntry = '';
+
+        if (data.drawDownHistory) {
+            try {
+                drawDownHistory = JSON.parse(data.drawDownHistory);
+                if (drawDownHistory.length > 0) {
+                    const latestEntry = drawDownHistory[drawDownHistory.length - 1];
+                    latestDrawDownEntry = `${latestEntry.user} - ${latestEntry.action} - ${latestEntry.amount}`;
+                }
+            } catch (e) {
+                console.error('Failed to parse drawDownHistory:', e);
+            }
+        }
+
+        newRow.innerHTML = `
+                <td class="py-3 px-6 text-left whitespace-nowrap">
+                    <div class="mb-4">
+                        <select class="h-full bg-transparent ml-2">
+                            <option ${data.priority === 'priority' ? 'selected' : ''}>Priority</option>
+                            <option value="urgent" ${ data.priority === 'urgent' ? 'selected' : '' }>Urgent</option>
+                            <option value="high" ${ data.priority === 'high' ? 'selected' : '' }>High</option>
+                            <option value="medium" ${ data.priority === 'medium' ? 'selected' : '' }>Medium</option>
+                            <option value="low" ${ data.priority === 'low' ? 'selected' : '' }>Low</option>
+                        </select>
+                    </div>
+                </td>
+                <td class="py-3 px-6 text-left whitespace-nowrap">
+                    <input type="text" class="w-full h-full bg-transparent" value="${data.name || ''}" />
+                </td>
+                <td class="py-3 px-6 text-left">
+                    <input type="number" class="w-full h-full bg-transparent" value="${data.quantity || ''}" {{ 'disabled' if role not in ['General Contractor', 'Subcontractor', 'Supplier'] else '' }}>
+                </td>
+                <td class="py-3 px-6 text-left draw-down-cell">
+                    <p class="drawDownAccountingText">${latestDrawDownEntry}</p>
+                    <div class="hidden drawdown-data">${JSON.stringify(drawDownHistory)}</div>
+                </td>
+                <td class="py-3 px-6 text-left">
+                    <!-- Units dropdown -->
+                    <select class="h-full bg-transparent">
+                        <option value="units" ${data.unit === 'units' ? 'selected' : ''}>Units</option>
+                        <option value="kg" ${data.unit === 'kg' ? 'selected' : ''}>Kg</option>
+                        <option value="lbs" ${data.unit === 'lbs' ? 'selected' : ''}>Lbs</option>
+                        <option value="tonnes" ${data.unit === 'tonnes' ? 'selected' : ''}>Tonnes</option>
+                        <option value="square feet" ${data.unit === 'square feet' ? 'selected' : ''}>Square Feet</option>
+                        <option value="cubic feet" ${data.unit === 'cubic feet' ? 'selected' : ''}>Cubic Feet</option>
+                        <option value="cubic meter" ${data.unit === 'cubic meter' ? 'selected' : ''}>Cubic Meter</option>
+                        <option value="square meter" ${data.unit === 'square meter' ? 'selected' : ''}>Square Meter</option>
+                    </select>
+                </td>
+                <td class="py-3 px-6 text-left flex items-center">
+                    <!-- Lead Time -->
+                    <input type="number" class="h-full bg-transparent" value="${data.leadTime || ''}" {{ 'disabled' if role not in ['Subcontractor', 'Supplier'] else '' }}/>
+                    <select class="h-full bg-transparent ml-2" ${data.role !== 'Subcontractor' && data.role !== 'Supplier' ? 'disabled' : ''} >
+                        <option value="Days" ${data.leadTimeUnit === 'Days' ? 'selected' : ''}>Days</option>
+                        <option value="Weeks" ${data.leadTimeUnit === 'Weeks' ? 'selected' : ''}>Weeks</option>
+                        <option value="Months" ${data.leadTimeUnit === 'Months' ? 'selected' : ''}>Months</option>
+                    </select>
+                </td>
+                <td class="py-3 px-6 text-left">
+                    <!-- Needed On-site Date -->
+                    <input type="date" class="w-full h-full bg-transparent" value="${data.neededOnsite || ''}" />
+                </td>
+                <td class="py-3 px-6 text-left flex items-center">
+                    <!-- Manufacturing Time -->
+                    <input type="number" class="h-full bg-transparent" value="${data.manufacturingTime || ''}" />
+                    <select class="h-full bg-transparent ml-2">
+                        <option value="Days" ${data.manufacturingTimeUnit === 'Days' ? 'selected' : ''}>Days</option>
+                        <option value="Weeks" ${data.manufacturingTimeUnit === 'Weeks' ? 'selected' : ''}>Weeks</option>
+                        <option value="Months" ${data.manufacturingTimeUnit === 'Months' ? 'selected' : ''}>Months</option>
+                    </select>
+                </td>
+                <td class="py-3 px-6 text-left">
+                    <!-- ETA Delivery Date -->
+                    <input type="date" class="w-full h-full bg-transparent" value="${data.etaDelivery || ''}" />
+                </td>
+                <td class="py-3 px-6 text-left">
+                    <!-- Manufacturer -->
+                    <input type="text" class="w-full h-full bg-transparent" value="${data.manufacturer || ''}" />
+                </td>
+                <td class="py-3 px-6 text-left">
+                    <!-- Fabrication dropdown -->
+                    <select class="w-full h-full bg-transparent">
+                        <option value="Local" ${data.fabrication === 'Local' ? 'selected' : ''}>Local</option>
+                        <option value="Out of State" ${data.fabrication === 'Out of State' ? 'selected' : ''}>Out of State</option>
+                        <option value="International" ${data.fabrication === 'International' ? 'selected' : ''}>International</option>
+                    </select>
+                </td>
+                <td class="py-3 px-6 text-left">
+                    <!-- Delivery Location dropdown -->
+                    <select class="h-full bg-transparent">
+                        <option value="Construction Site" ${data.deliveryLocation === 'Construction Site' ? 'selected' : ''}>Construction Site</option>
+                        <option value="Warehouse" ${data.deliveryLocation === 'Warehouse' ? 'selected' : ''}>Warehouse</option>
+                    </select>
+                </td>
+                <td class="py-3 px-6 text-left">
+                    <a href="${data.trackingNumber || '#'}" target="_blank" class="w-full h-full bg-transparent">${data.trackingNumber || ''}</a>
+                </td>
+                <td class="py-3 px-6 text-left whitespace-nowrap">
+                <button class="add-note-btn button accept">${data.notes ? 'Edit Note' : 'Add Note'}</button>
+                    <p class="noteText">${data.notes || ''}</p>
+                </td>
+                <td class="py-3 px-6 text-left whitespace-nowrap">
+                    <!-- Total Lead Time Analysis -->
+                </td>
+
+                <td class="py-3 px-6 text-left">
+                    <input type="checkbox" class="w-full h-full bg-transparent" name="select" onclick="addRowNotification('shipped', this)" ${data.shipped ? 'checked' : ''} {{ 'disabled' if role not in ['General Contractor', 'Subcontractor', 'Supplier'] else '' }} >
+                </td>
+                <td class="py-3 px-6 text-left">
+                    <input type="checkbox" class="w-full h-full bg-transparent" name="select" onclick="addRowNotification('delivered', this)" ${data.delivered ? 'checked' : ''} {{ 'disabled' if role not in ['General Contractor', 'Subcontractor', 'Supplier'] else '' }} >
+                </td>
+                <td class="py-3 px-6 text-left">
+                    <button class="attach-file-btn button accept {{ 'disabled' if role not in ['General Contractor', 'Subcontractor'] else '' }}" onclick="openAttachNoteFileModal()">${data.attachFile ? 'Edit File' : 'Attach File'}</button>
+                    <p onclick="downloadNoteFile('${data.file}')" class="fileNameText">${data.attachFile || ''}</p>
+                </td>
+            `;
+        updateTotalLeadTimeAnalysis(newRow);
+    }
+
+    function loadData() {
+        tableBody.innerHTML = '';
+        const projectName = '{{ project_name }}';
+        const divisionName = '{{ division_name }}';
+        fetch(`/division-data/${projectName}/${divisionName}`)
+            .then(response => response.json())
+            .then(data => {
+                console.log("Data loaded successfully:", data.entries);
+                if (data.success) {
+					if (Array.isArray(data.entries)) {
+						data.entries.forEach(entry => addRow(entry));
+					} else {
+						// add based on key (sheet)
+						document.querySelectorAll('.sheet-content').forEach(sheet => {
+							const tableBody = sheet.querySelector('tbody');
+							tableBody.innerHTML = '';
+						});
+
+						// Populate tables with returned data
+						for (const sheetName in data.entries) {
+							if (data.entries.hasOwnProperty(sheetName)) {
+								let tableBodyName = escapeSelector(sheetName);
+								const tableBody = document.querySelector(`#${tableBodyName} tbody`);
+								if (tableBody) {
+									data.entries[sheetName].forEach(rowData => addRow(rowData, tableBody));
+								} else {
+									// If the sheet does not exist, create it
+									addSheet(sheetName);
+									const newTableBody = document.querySelector(`#${tableBodyName} tbody`);
+									data.entries[sheetName].forEach(rowData => addRow(rowData, newTableBody));
+								}
+							}
+						}
+					}
+                } else {
+                    console.error('Error loading data:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error loading data:', error);
+            });
+    }
+
+    function gatherRowsData() {
+		const sheetsData = {}
+
+		document.querySelectorAll('.sheet-content').forEach(sheet => {
+			const table = sheet.querySelector('table')
+			const headers = Array.from(table.querySelectorAll('th'))
+				.map(th => th.textContent.trim()
+					.toLowerCase());
+			const rowsData = Array.from(table.querySelectorAll('tbody tr'))
+				.map(tr => {
+					const cells = tr.querySelectorAll('td');
+					const rowData = {};
+					headers.forEach((header, index) => {
+						if (typeof cells[index] !== 'undefined') {
+							const input = cells[index].querySelector('input');
+							const select = cells[index].querySelector('select');
+							const checkbox = cells[index].querySelector('input[type="checkbox"]');
+							const cellValue = checkbox ? checkbox.checked : input ? input.value : select ? select.value : cells[index].textContent;
+                            if ( typeof cellValue === 'string' ){ 
+                                cellValue.trim();
+                            }
+							switch (header) {
+                                case 'priority':
+                                    rowData['priority'] = cellValue;
+                                    break;
+								case 'name/description':
+									rowData['name'] = cellValue;
+									break;
+								case 'quantity':
+									rowData['quantity'] = cellValue;
+									break;
+								case 'unit':
+									rowData['unit'] = cellValue;
+									break;
+								case 'lead time':
+									rowData['leadTime'] = cellValue;
+									break;
+								case 'needed on-site':
+									rowData['neededOnsite'] = cellValue;
+									break;
+								case 'manufacturing time':
+									rowData['manufacturingTime'] = cellValue;
+									break;
+								case 'eta delivery':
+									rowData['etaDelivery'] = cellValue;
+									break;
+								case 'manufacturer':
+									rowData['manufacturer'] = cellValue;
+									break;
+								case 'fabrication':
+									rowData['fabrication'] = cellValue;
+									break;
+								case 'delivery location':
+									rowData['deliveryLocation'] = cellValue;
+									break;
+								case 'tracking number':
+									rowData['trackingNumber'] = cellValue;
+									break;
+								case 'notes':
+									rowData['notes'] = cells[index].querySelector('.noteText') ? cells[index].querySelector('.noteText').textContent.trim() : '';
+									break;
+								case 'total lead time analysis':
+									rowData['totalLeadTimeAnalysis'] = cellValue;
+									break;
+								case 'shipped':
+									rowData['shipped'] = cellValue;
+									break;
+								case 'delivered':
+									rowData['delivered'] = cellValue;
+									break;
+								case 'attach file':
+									// Do nothing because we do this in the uploadNote
+									rowData['attachFile'] = '';
+									break;
+                                case 'draw down accounting':
+                                    // get all data from drawDownHistory and submit it
+                                    rowData['drawDownHistory'] = cells[index].querySelector('.drawdown-data') ? cells[index].querySelector('.drawdown-data').innerHTML : '';
+                                    break;
+								default:
+									rowData[header] = cellValue;
+									break;
+							}
+						} else {
+							rowData[header] = '';
+						}
+					});
+                    // These items were changed from unchecked to checked notificationEmail is the row that changed so in the backend we can send email with title of row that changed
+                    rowData['shippedNotification'] = notificationEmail['shipped']
+                    rowData['deliveredNotification'] = notificationEmail['delivered']
+					return rowData;
+				});
+			sheetName = document.getElementById(sheet.id + '-name').textContent
+			sheetsData[sheetName] = rowsData;
+		});
+		return sheetsData;
+    }
+
+    function submitData() {
+        let rowsData = gatherRowsData();
+        const urlParts = window.location.pathname.split('/');
+        const projectName = urlParts[2];
+        const divisionName = urlParts[3];
+
+        fetch(`/update-division/${projectName}/${divisionName}/data`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(rowsData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+                loadData();
+                updateTotalLeadTimeAnalysis();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+
+        if (Object.keys(uploadedFiles).length > 0) {
+            uploadNoteFile();
+        }
+    }
+
+    function handleInvite() {
+        const emailRoleContainer = document.getElementById('email-role-container-invite');
+        const emailInputs = emailRoleContainer.querySelectorAll('input[name="inviteEmail"]');
+        const roleSelects = emailRoleContainer.querySelectorAll('select[name="inviteRole"]');
+        const companyNames = emailRoleContainer.querySelectorAll('input[name="inviteCompanyName"]')
+        const divisionName = '{{ division_name }}';
+        const projectName = '{{ project_name }}';
+
+        const invites = [];
+        emailInputs.forEach((input, index) => {
+            const email = input.value;
+            const company = companyNames[index].value;
+            const role = roleSelects[index].value;
+            if (email && role && company) {
+                invites.push({
+                    email,
+                    company, 
+                    role
+                });
+            }
+        });
+
+        fetch(`/invite-to-division/${projectName}/${divisionName}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(invites)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Invitations sent successfully.');
+                } else {
+                    alert('Failed to send invitations.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while sending invitations.');
+            });
+    }
+    submitDataButton.addEventListener('click', submitData);
+    inviteToggle.addEventListener('click', function() {
+        inviteSection.style.display = inviteSection.style.display === "none" ? "block" : "none";
+    });
+    sendInvitesButton.addEventListener('click', handleInvite);
+    loadData();
+    setInterval(loadData, 120000);
+});
+
+function extractProjectAndDivisionFromURL() {
+    const pathSegments = window.location.pathname.split('/');
+    const projectName = pathSegments[2];
+    const divisionName = decodeURIComponent(pathSegments[3]);
+    return {
+        projectName,
+        divisionName
+    };
+}
+
+function fetchMilestones() {
+    const {
+        projectName,
+        divisionName
+    } = extractProjectAndDivisionFromURL();
+    fetch(`/get-milestones?project_name=${projectName}&division_name=${divisionName}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.length > 0) {
+                const milestonesBody = document.getElementById('milestonesBody');
+                milestonesBody.innerHTML = '';
+                data.milestones.forEach(milestone => {
+                    const row = `<tr>
+                                    <td>${milestone.description}</td>
+                                    <td>${milestone.completed ? 'Yes' : 'No'}</td>
+                                    <td><button onclick="toggleMilestoneCompletion(${milestone.id}, ${!milestone.completed})">Toggle Completion</button></td>
+                                    <td><button onclick="removeMilestone(${milestone.id})">Remove</button></td>
+                                 </tr>`;
+                    milestonesBody.innerHTML += row;
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching milestones:', error);
+        });
+}
+
+function toggleMilestoneCompletion(milestoneId, completed) {
+    fetch('/toggle-milestone', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                milestoneId,
+                completed
+            }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Milestone completion toggled:', data);
+            fetchMilestones();
+        })
+        .catch(error => {
+            console.error('Error toggling milestone completion:', error);
+        });
+}
+
+function removeMilestone(milestoneId) {
+    fetch('/remove-milestone', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                milestoneId
+            }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Milestone removed:', data);
+            fetchMilestones();
+        })
+        .catch(error => {
+            console.error('Error removing milestone:', error);
+        });
+}
+document.addEventListener('DOMContentLoaded', function() {
+    const tableBody = getCurrentTable().querySelector('tbody');
+    const addRowButton = document.getElementById('addRowButton');
+    const addRowModal = document.getElementById('addRowModal');
+    const closeModalButton = document.querySelector('.close-modal');
+    const addRowSubmitButton = document.getElementById('addRowSubmitButton');
+
+    addRowButton.addEventListener('click', () => {
+        addRowModal.classList.remove('hidden');
+    });
+
+    closeModalButton.addEventListener('click', () => {
+        addRowModal.classList.add('hidden');
+    });
+
+    addRowSubmitButton.addEventListener('click', () => {
+        const newRowData = {
+            priority: document.getElementById('modalPriority').value,
+            name: document.getElementById('modalName').value,
+            quantity: document.getElementById('modalQuantity').value,
+            drawDown: document.getElementById('modalDrawDown').value,
+            unit: document.getElementById('modalUnit').value,
+            leadTime: document.getElementById('modalLeadTime').value,
+            neededOnsite: document.getElementById('modalNeededOnsite').value,
+            manufacturingTime: document.getElementById('modalManufacturingTime').value,
+            etaDelivery: document.getElementById('modalEtaDelivery').value,
+            manufacturer: document.getElementById('modalManufacturer').value,
+            fabrication: document.getElementById('modalFabrication').value,
+            deliveryLocation: document.getElementById('modalDeliveryLocation').value,
+            trackingNumber: document.getElementById('modalTrackingNumber').value,
+            notes: document.getElementById('modalNotes').value,
+			leadTimeAnalysis: '',
+			shipped: false,
+			delivered: false,
+			attachFile: ''
+        };
+        addRow(newRowData);
+        addRowModal.classList.add('hidden');
+    });
+
+    function addRow(data = {}) {
+		const tableBody = getCurrentTable().querySelector('tbody');
+        const newRow = tableBody.insertRow();
+
+        const drawDownHistory = data.drawDownHistory || [];
+        const latestDrawDownEntry = drawDownHistory.length > 0 
+            ? `${drawDownHistory[drawDownHistory.length - 1].user} - ${drawDownHistory[drawDownHistory.length - 1].action} - ${drawDownHistory[drawDownHistory.length - 1].amount}` 
+            : '';
+
+        newRow.innerHTML = `
+            <td class="py-3 px-6 text-left whitespace-nowrap">
+                <div class="mb-4">
+                    <select class="h-full bg-transparent ml-2">
+                        <option ${data.priority === 'priority' ? 'selected' : ''}>Priority</option>
+                        <option value="urgent" ${ data.priority === 'urgent' ? 'selected' : '' }>Urgent</option>
+                        <option value="high" ${ data.priority === 'high' ? 'selected' : '' }>High</option>
+                        <option value="medium" ${ data.priority === 'medium' ? 'selected' : '' }>Medium</option>
+                        <option value="low" ${ data.priority === 'low' ? 'selected' : '' }>Low</option>
+                    </select>
+                </div>
+            </td>
+            <td class="py-3 px-6 text-left whitespace-nowrap">
+                <input type="text" class="w-full h-full bg-transparent" value="${data.name || ''}" />
+            </td>
+            <td class="py-3 px-6 text-left">
+                <input type="number" class="w-full h-full bg-transparent" value="${data.quantity || ''}" />
+            </td>
+            <td class="py-3 px-6 text-left draw-down-cell">
+                <p class="drawDownAccountingText">${latestDrawDownEntry}</p>
+                <div class="hidden drawdown-data">${JSON.stringify(drawDownHistory)}</div>
+            </td>
+            <td class="py-3 px-6 text-left">
+                <select class="w-full h-full bg-transparent">
+                    <option value="units" ${data.unit === 'units' ? 'selected' : ''}>Units</option>
+                    <option value="kg" ${data.unit === 'kg' ? 'selected' : ''}>Kg</option>
+                    <option value="lbs" ${data.unit === 'lbs' ? 'selected' : ''}>Lbs</option>
+                    <option value="tonnes" ${data.unit === 'tonnes' ? 'selected' : ''}>Tonnes</option>
+                    <option value="square feet" ${data.unit === 'square feet' ? 'selected' : ''}>Square Feet</option>
+                    <option value="cubic feet" ${data.unit === 'cubic feet' ? 'selected' : ''}>Cubic Feet</option>
+                    <option value="cubic meter" ${data.unit === 'cubic meter' ? 'selected' : ''}>Cubic Meter</option>
+                    <option value="square meter" ${data.unit === 'square meter' ? 'selected' : ''}>Square Meter</option>
+                </select>
+            </td>
+            <td class="py-3 px-6 text-left flex items-center">
+                <input type="number" class="w-2/3 h-full bg-transparent" value="${data.leadTime || ''}" />
+                <select class="w-1/3 h-full bg-transparent ml-2">
+                    <option value="Days" ${data.leadTimeUnit === 'Days' ? 'selected' : ''}>Days</option>
+                    <option value="Weeks" ${data.leadTimeUnit === 'Weeks' ? 'selected' : ''}>Weeks</option>
+                    <option value="Months" ${data.leadTimeUnit === 'Months' ? 'selected' : ''}>Months</option>
+                </select>
+            </td>
+            <td class="py-3 px-6 text-left">
+                <input type="date" class="w-full h-full bg-transparent" value="${data.neededOnsite || ''}" />
+            </td>
+            <td class="py-3 px-6 text-left flex items-center">
+                <input type="number" class="w-2/3 h-full bg-transparent" value="${data.manufacturingTime || ''}" />
+                <select class="w-1/3 h-full bg-transparent ml-2">
+                    <option value="Days" ${data.manufacturingTimeUnit === 'Days' ? 'selected' : ''}>Days</option>
+                    <option value="Weeks" ${data.manufacturingTimeUnit === 'Weeks' ? 'selected' : ''}>Weeks</option>
+                    <option value="Months" ${data.manufacturingTimeUnit === 'Months' ? 'selected' : ''}>Months</option>
+                </select>
+            </td>
+            <td class="py-3 px-6 text-left">
+                <input type="date" class="w-full h-full bg-transparent" value="${data.etaDelivery || ''}" />
+            </td>
+            <td class="py-3 px-6 text-left">
+                <input type="text" class="w-full h-full bg-transparent" value="${data.manufacturer || ''}" />
+            </td>
+            <td class="py-3 px-6 text-left">
+                <select class="w-full h-full bg-transparent">
+                    <option value="Local" ${data.fabrication === 'Local' ? 'selected' : ''}>Local</option>
+                    <option value="Out of State" ${data.fabrication === 'Out of State' ? 'selected' : ''}>Out of State</option>
+                    <option value="International" ${data.fabrication === 'International' ? 'selected' : ''}>International</option>
+                </select>
+            </td>
+            <td class="py-3 px-6 text-left">
+                <select class="w-full h-full bg-transparent">
+                    <option value="Construction Site" ${data.deliveryLocation === 'Construction Site' ? 'selected' : ''}>Construction Site</option>
+                    <option value="Warehouse" ${data.deliveryLocation === 'Warehouse' ? 'selected' : ''}>Warehouse</option>
+                </select>
+            </td>
+            <td class="py-3 px-6 text-left">
+                <input type="text" class="w-full h-full bg-transparent" value="${data.trackingNumber || ''}" />
+            </td>
+            <td class="py-3 px-6 text-left whitespace-nowrap">
+                <button class="add-note-btn button accept">Add Note</button>
+                <p class="noteText">${data.notes || ''}</p>
+            </td>
+			<td class="py-3 px-6 text-left whitespace-nowrap">
+				<!-- Total Lead Time Analysis -->
+			</td>
+            <td class="py-3 px-6 text-left">
+                <input type="checkbox" class="w-full h-full bg-transparent" name="select" onclick="addRowNotification('shipped', this)" ${data.shipped ? 'checked' : ''}>
+            </td>
+            <td class="py-3 px-6 text-left">
+                <input type="checkbox" class="w-full h-full bg-transparent" name="select" onclick="addRowNotification("delivered", this)" ${data.delivered ? 'checked' : ''}>
+            </td>
+            <td class="py-3 px-6 text-left">
+                <button class="attach-file-btn button accept" onclick="openAttachNoteFileModal()">Attach File</button>
+                <p class="fileNameText">${data.attachFile || ''}</p>
+            </td>
+        `;
+        updateTotalLeadTimeAnalysis(newRow);
+    }
+});
+
+function addRowNotification(action, rowThis) {
+    let table = getCurrentTable();
+    let indices = getColumnIndices(table);
+    let nameIndex = indices['Name/Description']
+    let name = rowThis.closest('tr').getElementsByTagName('td')[nameIndex].querySelector("input[type='text']").value
+    notificationEmail[action].push(name);
+}
+
+function searchTable() {
+    const input = document.getElementById('searchInput');
+    const filter = input.value.toLowerCase()
+        .trim();
+    const table = getCurrentTable();
+    const tr = table.getElementsByTagName('tr');
+
+    console.log(`Filter: ${filter}`); // Debugging: Show the current filter
+
+    for (let i = 1; i < tr.length; i++) {
+        const td = tr[i].getElementsByTagName('td')[1]; // Name/Description column is the first column (index 0)
+        if (td) {
+            const inputElement = td.querySelector('input');
+            const textValue = (inputElement && inputElement.value) ? inputElement.value.trim() : '';
+            console.log(`Row ${i} Text: '${textValue}'`); // Debugging: Show the text content of the cell, with quotes to detect any whitespace issues
+            if (textValue.toLowerCase()
+                .indexOf(filter) > -1) {
+                tr[i].style.display = '';
+                console.log(`Row ${i} displayed`);
+            } else {
+                tr[i].style.display = 'none';
+                console.log(`Row ${i} hidden`);
+            }
+        } else {
+            console.log(`Row ${i} has no TD element`);
+        }
+    }
+}
+
+let sheetCount = 1;
+
+            function showSheet(sheetId) {
+                document.querySelectorAll('.sheet-content').forEach(sheet => {
+                    sheet.classList.add('hidden');
+                });
+                document.getElementById(sheetId).classList.remove('hidden');
+                document.querySelectorAll('#tabs button').forEach(button => {
+                    button.classList.remove('border-blue-500');
+                    button.classList.add('border-transparent');
+                });
+                document.querySelector(`button[onclick="showSheet('${sheetId}')"]`).classList.add('border-blue-500');
+            }
+			// for when the user clicks out of a dropdown, ensuring only one is visible
+			document.addEventListener('click', function (event) {
+				const dropdowns = document.querySelectorAll('.dropdown-menu');
+				dropdowns.forEach(dropdown => {
+					if (!dropdown.contains(event.target) && !dropdown.previousElementSibling.contains(event.target)) {
+						dropdown.classList.add('hidden');
+					}
+				});
+			});
+            function addSheet(sheetName) {
+                sheetCount++;
+				const displaySheetName = sheetName || `Sheet ${sheetCount}`;
+                const newSheetId = escapeSelector(displaySheetName) || `sheet${sheetCount}`;
+				const newDropdownMenuId = `dropdownMenu${sheetCount}`;
+                const newTabButton = document.createElement('div');
+                newTabButton.className = "relative";
+                newTabButton.innerHTML = `
+                    <button class="py-2 px-4 text-gray-700 border-b-2 border-transparent hover:border-gray-300 font-semibold focus:outline-none flex items-center" onclick="showSheet('${newSheetId}')">
+                        <span id="${newSheetId}-name">${displaySheetName}</span>
+                        <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" onclick="toggleDropdown('${newDropdownMenuId}')">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>
+                    <div class="sheet-dropdown-menu mt-2 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5" id="${newDropdownMenuId}">
+                        <button class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onclick="editSheetName('${newSheetId}')">Edit Name</button>
+                    </div>
+                `;
+
+                const newSheetContent = document.createElement('div');
+                newSheetContent.id = newSheetId;
+                newSheetContent.className = 'sheet-content mt-4 hidden';
+                newSheetContent.innerHTML = `
+                    <div class="tableContainer">
+                        <div class="bg-white shadow-md rounded my-6 overflow-x-auto">
+                            <table class="min-w-full table-auto border-collapse border border-gray-300 data-table" id="data-table-${newSheetId}">
+								<thead>
+									<tr class="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
+                                        <th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">Priority</th>
+										<th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">Name/Description</th>
+										<th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">Quantity</th>
+                                        <th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">Draw Down Accounting</th>
+										<th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">Unit</th>
+										<th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">Lead Time</th>
+										<th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">Needed On-site</th>
+										<th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">Manufacturing Time</th>
+										<th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">ETA Delivery</th>
+										<th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">Manufacturer</th>
+										<th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">Fabrication</th>
+										<th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">Delivery Location</th>
+										<th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">Tracking Number</th>
+										<th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">Notes</th>
+										<th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">Total Lead Time Analysis</th>
+										<th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">Shipped</th>
+										<th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">Delivered</th>
+										<th class="py-3 px-6 border border-gray-300 text-left draggable-header" draggable="true">Attach File</th>
+									</tr>
+								</thead>
+                                <tbody>
+                                    <!-- Rows will be added here dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+				document.getElementById('tabs').insertBefore(newTabButton, document.getElementById('addSheetButton'));
+
+                document.querySelector('.sheetContainer').appendChild(newSheetContent);
+
+                showSheet(newSheetId);
+            }
+
+// Function to rename a sheet
+function renameSheet(sheetId, newName) {
+	const tabButton = document.querySelector(`button[onclick="showSheet('${sheetId}')"]`);
+	if (tabButton) {
+		tabButton.textContent = newName;
+	}
+}
+
+            function getCurrentTable() {
+                const activeSheet = document.querySelector('.sheet-content:not(.hidden)');
+                return activeSheet.querySelector('table');
+            }
+
+			function toggleDropdown(dropdownId) {
+				const dropdown = document.getElementById(dropdownId);
+				if (dropdown) {
+					dropdown.style.display = 'block';
+				}
+			}
+
+			function editSheetName(sheetId) {
+				const newName = prompt("Enter new sheet name:");
+				if (newName) {
+					document.getElementById(`${sheetId}-name`).textContent = newName;
+				}
+			}
+
+function changeSheetColor(sheetId) {
+    const sheet = document.getElementById(`${sheetId}-name`);
+    const newColor = prompt('Enter new sheet color (e.g., blue, red, or bg-red-500):');
+
+    const basicColors = ['blue', 'red', 'green', 'yellow', 'purple', 'pink', 'indigo', 'gray'];
+    let tailwindClass = '';
+
+    if (basicColors.includes(newColor)) {
+        tailwindClass = `bg-${newColor}-500`;
+    } else if (newColor.startsWith('bg-') && newColor.match(/^bg-\w+-\d{3}$/)) {
+        tailwindClass = newColor;
+    } else {
+        alert('Invalid color format. Please enter a basic color name (e.g., blue) or a valid Tailwind CSS color class (e.g., bg-blue-500).');
+        return;
+    }
+
+    sheet.className = `sheet-content mt-4 ${tailwindClass}`;
+}
+
+            // Close dropdown menu when clicking outside
+            document.addEventListener('click', function(event) {
+                if (!event.target.matches('.flex.items-center svg')) {
+                    document.querySelectorAll('.sheet-dropdown-menu').forEach(menu => {
+                        menu.style.display = 'none';
+                    });
+                }
+            });
+	</script>
+
+	<!-- Add Row Modal -->
+	<div id="addRowModal" class="fixed inset-0 z-10 overflow-auto bg-black bg-opacity-40 hidden">
+		<div class="bg-white rounded-lg shadow-lg m-auto border border-gray-200 w-4/5 md:w-1/2 lg:w-1/3 mt-20">
+			<div class="modal-content p-6">
+				<span class="close-modal text-gray-400 float-right text-3xl font-bold cursor-pointer hover:text-gray-600">&times;</span>
+				<h2 class="text-xl font-semibold mb-4">Add New Row</h2>
+				<form id="addRowForm">
+					<!-- Input fields for all required data -->
+                    <div class="mb-4">
+                        <label class="block mb-2">Priority</label>
+                        <select id="modalPriority" class="h-full bg-transparent ml-2">
+                            <option value="urgent">Urgent</option>
+                            <option value="high">High</option>
+                            <option value="medium">Medium</option>
+                            <option value="low">Low</option>
+                        </select>
+                    </div>
+					<div class="mb-4">
+						<label class="block mb-2">Name/Description</label>
+						<input type="text" id="modalName" class="w-full p-2 border rounded" />
+					</div>
+					<div class="mb-4">
+						<label class="block mb-2">Quantity</label>
+						<input type="number" id="modalQuantity" class="w-full p-2 border rounded" />
+					</div>
+                    <div class="mb-4">
+                        <label class="block mb-2">Draw Down Amount</label>
+                        <input type="number" id="modalDrawDown" class="w-full p-2 border rounded" />
+                    </div>
+					<div class="mb-4">
+						<label class="block mb-2">Unit</label>
+						<select id="modalUnit" class="w-full p-2 border rounded">
+							<option value="units">Units</option>
+							<option value="kg">Kg</option>
+							<option value="lbs">Lbs</option>
+							<option value="tonnes">Tonnes</option>
+							<option value="square feet">Square Feet</option>
+							<option value="cubic feet">Cubic Feet</option>
+							<option value="cubic meter">Cubic Meter</option>
+							<option value="square meter">Square Meter</option>
+						</select>
+					</div>
+					<div class="mb-4">
+						<label class="block mb-2">Lead Time</label>
+						<input type="number" id="modalLeadTime" class="w-full p-2 border rounded" />
+					</div>
+					<div class="mb-4">
+						<label class="block mb-2">Needed On-site</label>
+						<input type="date" id="modalNeededOnsite" class="w-full p-2 border rounded" />
+					</div>
+					<div class="mb-4">
+						<label class="block mb-2">Manufacturing Time</label>
+						<input type="number" id="modalManufacturingTime" class="w-full p-2 border rounded" />
+					</div>
+					<div class="mb-4">
+						<label class="block mb-2">ETA Delivery</label>
+						<input type="date" id="modalEtaDelivery" class="w-full p-2 border rounded" />
+					</div>
+					<div class="mb-4">
+						<label class="block mb-2">Manufacturer</label>
+						<input type="text" id="modalManufacturer" class="w-full p-2 border rounded" />
+					</div>
+					<div class="mb-4">
+						<label class="block mb-2">Fabrication</label>
+						<select id="modalFabrication" class="w-full p-2 border rounded">
+							<option value="Local">Local</option>
+							<option value="Out of State">Out of State</option>
+							<option value="International">International</option>
+						</select>
+					</div>
+					<div class="mb-4">
+						<label class="block mb-2">Delivery Location</label>
+						<select id="modalDeliveryLocation" class="w-full p-2 border rounded">
+							<option value="Construction Site">Construction Site</option>
+							<option value="Warehouse">Warehouse</option>
+						</select>
+					</div>
+					<div class="mb-4">
+						<label class="block mb-2">Tracking Link</label>
+						<input type="text" id="modalTrackingNumber" class="w-full p-2 border rounded" />
+					</div>
+					<div class="mb-4">
+						<label class="block mb-2">Notes</label>
+						<textarea id="modalNotes" class="w-full p-2 border rounded"></textarea>
+					</div>
+					<button type="button" id="addRowSubmitButton" class="bg-blue-500 text-white font-bold py-2 px-4 rounded">Add Task</button>
+				</form>
+			</div>
+		</div>
+	</div>
+
+</body>
+
+</html>

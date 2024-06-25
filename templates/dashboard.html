@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@latest/dist/tailwind.min.css" rel="stylesheet">
+  </head>
+  <body class="bg-gray-50 text-gray-800" data-user-email="{{ user_email }}">
+    <!-- Navigation -->
+    <nav class="bg-white shadow">
+      <div class="container mx-auto px-6 py-3">
+        <div class="flex items-center justify-between">
+          <div class="text-xl font-semibold text-gray-700">
+            <a class="text-gray-800" href="/dashboard">Contrax</a>
+          </div>
+          <div class="flex items-center">
+            <span class="mx-2 text-gray-600 text-sm">Welcome, {{ user_email }}</span>
+            <button id="lateTasksAlertBtn" class="px-4 py-2 text-white bg-red-500 rounded hover:bg-red-600 focus:outline-none mr-2">Alerts</button>
+            <a href="/settings" class="px-4 py-2 text-white bg-gray-500 rounded hover:bg-gray-600 focus:outline-none mr-2">Settings</a>
+            <a href="/logout" class="px-4 py-2 text-white bg-blue-500 rounded hover:bg-blue-600 focus:outline-none">Logout</a>
+          </div>
+        </div>
+      </div>
+    </nav>
+    <!-- Modal Placeholder (Initially Hidden) -->
+    <div id="lateTasksModalBackdrop" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center">
+      <!-- Modal content will be dynamically populated -->
+    </div>
+    <!-- Modal Backdrop (Initially Hidden) -->
+    <div id="lateTasksModal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center">
+      <!-- Modal Content -->
+      <div class="bg-white rounded-lg p-5 shadow-xl" style="width: 600px;">
+        <!-- Close Button -->
+        <div class="flex justify-end">
+          <button id="closeModalBtn" class="text-gray-600 hover:text-gray-900">&times;</button>
+        </div>
+        <div class="overflow-auto">
+          <table id="lateTasksTable" class="min-w-full divide-y divide-gray-200">
+            <!-- Table for Late Tasks -->
+            <div class="mt-3">
+              <h3 class="text-lg leading-6 font-medium text-gray-900">Late Tasks</h3>
+              <div class="mt-2">
+                <table id="lateTasksTable" class="min-w-full divide-y divide-gray-200">
+                  <!-- Table Header -->
+                  <thead class="bg-gray-50">
+                    <tr>
+                      <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project - Division</th>
+                      <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Task</th>
+                      <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Days Late</th>
+                    </tr>
+                  </thead>
+                  <!-- Table Body -->
+                  <tbody id="lateTasksBody" class="bg-white divide-y divide-gray-200">
+                    <!-- Dynamically populated rows -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+        </div>
+      </div>
+      </table>
+    </div>
+    <!-- Projects Grid -->
+    <div class="container mx-auto my-8">
+      <h2 class="text-2xl font-bold mb-8">Your Projects</h2>
+      <div class="grid gap-6 mb-8 md:grid-cols-2 xl:grid-cols-3"> {% for project_name, (divisions, is_owner) in projects_info.items() %} <div class="bg-white p-5 rounded-lg shadow-md project-card" data-project-id="{{ project_id }}" data-project-name="{{ project_name }}">
+          <h3 class="text-xl font-semibold truncate">{{ project_name }}</h3> {% if is_owner %} <p class="text-green-500 mt-2">You are the owner of this project.</p> {% else %} <div class="mt-2"> {% for division in divisions %} <span class="inline-block bg-blue-100 text-blue-800 text-xs px-2 rounded-full uppercase font-semibold tracking-wide">
+              {{ division }}
+            </span> {% endfor %} </div> {% endif %}
+        </div> {% endfor %} </div>
+    </div>
+    <!-- Create Project Form -->
+    <div class="container mx-auto my-8">
+      <div class="my-4 p-5 bg-white rounded-lg shadow-md">
+        <h3 class="text-xl font-semibold mb-4">Create New Project</h3>
+        <form id="createProjectForm">
+          <div class="mb-4">
+            <label for="projectName" class="block text-sm font-medium text-gray-700">Project Name</label>
+            <input type="text" id="projectName" name="projectName" required class="mt-1 p-2 w-full border rounded-md">
+          </div>
+          <div class="mb-4">
+            <label for="projectDescription" class="block text-sm font-medium text-gray-700">Description</label>
+            <textarea id="projectDescription" name="projectDescription" required class="mt-1 p-2 w-full border rounded-md"></textarea>
+          </div>
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700">Divisions</label>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2"> {% for division in DIVISIONS %} <div class="flex flex-col items-start mb-4">
+                <div class="flex items-center mb-2">
+                  <input id="div-{{ division }}" type="checkbox" value="{{ division }}" name="divisions" class="h-4 w-4">
+                  <label for="div-{{ division }}" class="ml-2 block text-sm font-medium text-gray-700">{{ division }}</label>
+                </div>
+                <div id="email-role-container-{{ division }}" class="w-full mb-2">
+                  <div class="flex items-center mb-2">
+                    <input type="email" id="email-{{division}}" name="emails[{{ division }}][]" placeholder="Enter email" class="p-2 border rounded-md mr-2 w-1/2">
+                    <select id="role-{{division}}" name="roles[{{division}}][]" class="p-2 border rounded-md mr-2 w-1/3">
+                      <option value="" disabled selected>Select role</option> {% for role in ROLES %} <option value="{{ role }}">{{ role }}</option> {% endfor %}
+                    </select>
+                    <button type="button" onclick="removeEmailRoleRow(this)" class="bg-red-500 text-white px-2 py-1 rounded">Remove</button>
+                  </div>
+                </div>
+                <button type="button" onclick="addEmailRoleRow('{{ division }}')" class="bg-blue-500 text-white px-4 py-2 rounded">Add Email/Role</button>
+              </div> {% endfor %} </div>
+          </div>
+          <!-- Custom Divisions -->
+          <div class="container mx-auto my-8">
+            <div class="mb-4">
+              <label class="block text-sm font-medium text-gray-700">Custom Divisions</label>
+              <div id="customDivisions" class="mt-2">
+                <!-- Custom divisions will be added here -->
+              </div>
+              <button type="button" id="addCustomDivisionButton" class="mt-2 px-4 py-2 text-white bg-green-500 rounded hover:bg-green-600">Add Custom Division</button>
+            </div>
+          </div>
+          <div class="flex justify-end">
+            <button type="submit" class="px-4 py-2 text-white bg-blue-500 rounded hover:bg-blue-600 focus:outline-none">Create Project</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+            const divisionCheckboxes = document.querySelectorAll('input[name="divisions"]');
+
+            function removeCustomDivision(button) {
+              const row = button.parentNode.parentNode;
+              row.parentNode.removeChild(row);
+            }
+
+            function addCustomDivision() {
+              const container = document.createElement('div');
+              container.className = 'flex flex-col items-start mb-4';
+              container.innerHTML = `
+          
+									<div class="flex items-center mb-2">
+										<input type="text" name="customDivisionName[]" placeholder="Custom Division Name" class="p-2 border rounded-md mr-2 w-1/2">
+											<button type="button" onclick="removeCustomDivision(this)" class="bg-red-500 text-white px-2 py-1 rounded">Remove</button>
+										</div>
+										<div id="email-role-container-custom" class="w-full mb-2">
+											<div class="flex items-center mb-2">
+												<input type="email" name="customEmails[]" placeholder="Enter email" class="p-2 border rounded-md mr-2 w-1/2">
+													<select name="customRoles[]" class="p-2 border rounded-md mr-2 w-1/3">
+														<option value="" disabled selected>Select role</option>
+                {% for role in ROLES %}
+                
+														<option value="{{ role }}">{{ role }}</option>
+                {% endfor %}
+              
+													</select>
+													<button type="button" onclick="removeEmailRoleRow(this)" class="bg-red-500 text-white px-2 py-1 rounded">Remove</button>
+												</div>
+											</div>
+											<button type="button" onclick="addEmailRoleRow('custom')" class="bg-blue-500 text-white px-4 py-2 rounded">Add Email/Role</button>
+        `;
+              document.getElementById('customDivisions').appendChild(container);
+            }
+            document.getElementById('addCustomDivisionButton').addEventListener('click', addCustomDivision);
+            // Enable and disable email input based on checkbox status
+            divisionCheckboxes.forEach(checkbox => {
+              checkbox.addEventListener('change', function() {
+                const emailInputId = `email-${this.value}`;
+                const emailInput = document.getElementById(emailInputId);
+                emailInput.disabled = !this.checked;
+              });
+            });
+            // Function to handle clicks on project cards
+            const projectCards = document.querySelectorAll('.project-card');
+            projectCards.forEach(card => {
+              card.addEventListener('click', () => {
+                const projectName = card.getAttribute('data-project-name');
+                window.location.href = `/view-divisions?projectName=${encodeURIComponent(projectName)}`;
+              });
+            });
+            // Submit the create project form and handle the response
+            document.getElementById('createProjectForm').addEventListener('submit', function(event) {
+              event.preventDefault();
+              const formData = new FormData(event.target);
+              const projectName = formData.get('projectName');
+              const projectDescription = formData.get('projectDescription');
+              const emailDivisionMap = {};
+              const divisionCheckboxes = document.querySelectorAll('input[name="divisions"]');
+              divisionCheckboxes.forEach(checkbox => {
+                if (checkbox.checked) {
+                  const divisionName = checkbox.value;
+                  const emailInputs = document.querySelectorAll(`input[name="emails[${divisionName}][]"]`);
+                  const roleSelects = document.querySelectorAll(`select[name="roles[${divisionName}][]"]`);
+                  emailDivisionMap[divisionName] = [];
+                  emailInputs.forEach((emailInput, index) => {
+                    const email = emailInput.value.trim();
+                    const role = roleSelects[index].value;
+                    if (email && role) {
+                      emailDivisionMap[divisionName].push({
+                        email,
+                        role
+                      });
+                    }
+                  });
+                }
+              });
+              const customDivisions = {};
+              document.querySelectorAll('#customDivisions > div').forEach(div => {
+                const divisionNameInput = div.querySelector('input[name="customDivisionName[]"]');
+                const emailInputs = div.querySelectorAll('input[name="customEmails[]"]');
+                const roleSelects = div.querySelectorAll('select[name="customRoles[]"]');
+                if (divisionNameInput) {
+                  const divisionName = divisionNameInput.value.trim();
+                  if (divisionName) {
+                    customDivisions[divisionName] = [];
+                    emailInputs.forEach((emailInput, index) => {
+                      const email = emailInput.value.trim();
+                      const role = roleSelects[index].value;
+                      if (email && role) {
+                        customDivisions[divisionName].push({
+                          email,
+                          role
+                        });
+                      }
+                    });
+                  }
+                }
+              });
+              const requestData = {
+                projectName,
+                projectDescription,
+                emailDivisionMap,
+                customDivisions
+              };
+              fetch('/create-project', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestData),
+              }).then(response => response.json()).then(data => {
+                if (data.success) {
+                  console.log('Project created successfully.');
+                  window.location.reload();
+                } else {
+                  console.error('Failed to create project:', data.error);
+                }
+              }).catch(error => {
+                console.error('Error:', error);
+              });
+            });
+
+            function addEmailRoleRow(division) {
+              const container = document.getElementById('email-role-container-' + division);
+              const newRow = document.createElement('div');
+              newRow.className = 'flex items-center mb-2';
+              newRow.innerHTML = `
+											<input type="email" name="emails[${division}][]" placeholder="Enter email" class="p-2 border rounded-md mr-2 w-1/2">
+												<select name="roles[${division}][]" class="p-2 border rounded-md mr-2 w-1/3">
+													<option value="" disabled selected>Select role</option>
+          {% for role in ROLES %}
+													<option value="{{ role }}">{{ role }}</option>
+          {% endfor %}
+												</select>
+												<button type="button" onclick="removeEmailRoleRow(this)" class="bg-red-500 text-white px-2 py-1 rounded">Remove</button>
+      `;
+              container.appendChild(newRow);
+            }
+
+            function removeEmailRoleRow(button) {
+              const row = button.parentNode;
+              row.parentNode.removeChild(row);
+            }
+
+      });
+    </script>
+  </body>
+</html>

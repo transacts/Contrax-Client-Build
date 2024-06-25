@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Divisions - {{ project_name }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.1.2/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+</head>
+
+<body class="bg-gray-100">
+    <nav class="bg-white shadow">
+        <div class="container mx-auto px-6 py-3">
+            <div class="flex items-center justify-between">
+                <div class="text-xl font-semibold text-gray-700">
+                    <a class="text-gray-800" href="/dashboard">Contrax</a>
+                </div>
+                <div class="flex items-center">
+                    <span class="mx-2 text-gray-600 text-sm">Welcome, {{ user_email }}</span>
+                    <button id="lateTasksAlertBtn" class="px-4 py-2 text-white bg-red-500 rounded hover:bg-red-600 focus:outline-none mr-2">Alerts</button>
+                    <a href="/settings" class="px-4 py-2 text-white bg-gray-500 rounded hover:bg-gray-600 focus:outline-none mr-2">Settings</a>
+                    <a href="/logout" class="px-4 py-2 text-white bg-blue-500 rounded hover:bg-blue-600 focus:outline-none">Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-4">
+        {% if is_owner %}
+        <div class="container mx-auto px-4 mt-5">
+            <button id="showDirectoryModal" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                Directory        
+            </button>
+        </div>
+        {% endif %}
+
+        <div class="container mx-auto px-4 mt-5">
+            <button id="generateReportButton" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                Generate Report
+            </button>
+        </div>
+
+        {% if is_owner %}
+        <div class="container mx-auto px-4 mt-5">
+            <button id="deleteProjectButton" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+                Delete Project
+            </button>
+        </div>
+        {% endif %}
+
+        <h1 class="text-2xl font-bold text-gray-700 my-6">Divisions for {{ project_name }}</h1>
+        <ul class="list-disc">
+            {% for division in divisions %}
+            <li class="mb-2">
+                <button onclick="deleteDivision('{{ project_name }}', '{{ division }}')" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">Delete</button>
+                <a href="/view-division/{{ project_name }}/{{ division }}" class="text-blue-500 hover:text-blue-800 transition duration-300">{{ division }}</a>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    <div id="division-list" class="container mx-auto px-4 mt-5"></div>
+    <div class="container mx-auto px-4 mt-5">
+        <h2 class="text-xl font-bold mb-4">Add New Division</h2>
+        <div class="my-4">
+            <form id="addDivisionForm">
+                <input type="text" id="newDivisionName" placeholder="Enter new division name" required>
+                <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">New Division</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function(){
+            $('.project-link').click(function(e){
+                e.preventDefault();
+                var divisionName = $(this).data('division');
+
+                $.ajax({
+                    url: '/division-data',
+                    type: 'GET',
+                    data: { division: divisionName, projectName: "{{ project_name }}" },
+                    success: function(response){
+                        $('#division-list').html(response);
+                    },
+                    error: function(xhr, status, error){
+                        console.log("Error: " + error);
+                    }
+                });
+            });
+        });
+
+        function deleteDivision(projectName, divisionName) {
+            if(confirm(`Are you sure you want to delete the division: ${divisionName}?`)) {
+                fetch(`/delete-division/${projectName}/${divisionName}`, {
+                    method: 'DELETE',
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if(data.success) {
+                        alert('Division deleted successfully!');
+                        location.reload();
+                    } else {
+                        alert(`Failed to delete division: ${data.error}`);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to submit data.');
+                });
+            }
+        }
+
+        document.getElementById('addDivisionForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const newDivisionName = document.getElementById('newDivisionName').value;
+            const projectName = "{{ project_name }}";
+
+            fetch(`/add-division/${projectName}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ divisionName: newDivisionName })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.success) {
+                    alert('New division added successfully!');
+                    const divisionsList = document.querySelector('.list-disc');
+                    const newDivisionElement = document.createElement('li');
+                    newDivisionElement.classList.add('mb-2');
+                    newDivisionElement.innerHTML = `
+                        <a href="/view-division/${projectName}/${newDivisionName}" class="text-blue-500 hover:text-blue-800 transition duration-300">
+                            ${newDivisionName}
+                        </a>
+                    `;
+                    divisionsList.appendChild(newDivisionElement);
+                    document.getElementById('newDivisionName').value = '';
+                } else {
+                    alert('Failed to add new division');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to submit data.');
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const reportModal = document.getElementById('reportModal');
+            const closeReportModal = document.getElementById('closeReportModal');
+            const generateReportButton = document.getElementById('generateReportButton');
+            const reportOptions = document.querySelectorAll('.report-option');
+
+            generateReportButton.addEventListener('click', () => {
+                reportModal.classList.remove('hidden');
+            });
+
+            closeReportModal.addEventListener('click', () => {
+                reportModal.classList.add('hidden');
+            });
+
+            window.addEventListener('click', (event) => {
+                if (event.target == reportModal) {
+                    reportModal.classList.add('hidden');
+                }
+            });
+
+            reportOptions.forEach(option => {
+                option.addEventListener('click', (event) => {
+                    const reportType = event.target.getAttribute('data-report-type');
+                    if (reportType === 'milestone') {
+                        showMilestoneDatePicker(reportType);
+                    } else {
+                        generateReport(reportType);
+                    }
+                });
+            });
+
+            function showMilestoneDatePicker(reportType) {
+                const datePickerModal = document.getElementById('milestoneDatePickerModal');
+                datePickerModal.classList.remove('hidden');
+                
+                document.getElementById('generateMilestoneReport').addEventListener('click', () => {
+                    const startDate = document.getElementById('milestoneStartDate').value;
+                    const endDate = document.getElementById('milestoneEndDate').value;
+                    generateReport(reportType, startDate, endDate);
+                    datePickerModal.classList.add('hidden');
+                });
+            }
+
+            function generateReport(reportType, startDate = null, endDate = null) {
+                const projectName = "{{ project_name }}";
+                let url = `/generate-report/${projectName}/${reportType}`;
+                
+                if (startDate && endDate) {
+                    url += `?start_date=${startDate}&end_date=${endDate}`;
+                }
+
+                fetch(url, {
+                    method: 'GET',
+                })
+                .then(response => response.blob())
+                .then(blob => {
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = `${projectName}-report-${reportType}.pdf`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                })
+                .catch(error => console.error('Error generating report:', error));
+                reportModal.classList.add('hidden');
+            }
+        });
+
+        document.getElementById('deleteProjectButton').addEventListener('click', function() {
+            const projectName = "{{ project_name }}";
+
+            if (confirm('Are you sure you want to delete this project?')) {
+                fetch(`/delete-project/${projectName}`, {
+                    method: 'POST',
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if(data.success) {
+                        alert('Project deleted successfully!');
+                        window.location.href = '/';
+                    } else {
+                        alert(data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to submit data.');
+                });
+            }
+        });
+    </script>
+
+    {% include 'directoryModalTemplate.html' %}
+
+    <div id="reportModal" class="fixed inset-0 z-10 overflow-auto bg-black bg-opacity-40 hidden">
+        <div class="bg-white rounded-lg shadow-lg m-auto border border-gray-200 w-4/5 md:w-1/2 lg:w-1/3 mt-20">
+            <div class="modal-content p-6">
+                <span id="closeReportModal" class="text-gray-400 float-right text-3xl font-bold cursor-pointer hover:text-gray-600">&times;</span>
+                <h2 class="text-xl font-semibold mb-4">Select Report Type</h2>
+                <div class="my-4">
+                    <ul>
+                        <li>
+                            <button class="report-option bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded my-2" data-report-type="default">Default Printout</button>
+                        </li>
+                        <li>
+                            <button class="report-option bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded my-2" data-report-type="item_summary">Item Summary</button>
+                        </li>
+                        <li>
+                            <button class="report-option bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded my-2" data-report-type="lead_time_analysis">Lead Time Analysis</button>
+                        </li>
+                        <li>
+                            <button class="report-option bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded my-2" data-report-type="manufacturing_time">Manufacturing Time</button>
+                        </li>
+                        <li>
+                            <button class="report-option bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded my-2" data-report-type="eta_delivery">ETA Delivery</button>
+                        </li>
+                        <li>
+                            <button class="report-option bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded my-2" data-report-type="prefabrication_time">Prefabrication Time</button>
+                        </li>
+                        <li>
+                            <button class="report-option bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded my-2" data-report-type="milestone">Milestone</button>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="milestoneDatePickerModal" class="fixed inset-0 z-20 overflow-auto bg-black bg-opacity-40 hidden">
+        <div class="bg-white rounded-lg shadow-lg m-auto border border-gray-200 w-4/5 md:w-1/2 lg:w-1/3 mt-20">
+            <div class="modal-content p-6">
+                <h2 class="text-xl font-semibold mb-4">Select Date Range for Milestone Report</h2>
+                <div class="my-4">
+                    <label for="milestoneStartDate" class="block mb-2">Start Date:</label>
+                    <input type="date" id="milestoneStartDate" class="w-full p-2 border rounded mb-4">
+                    <label for="milestoneEndDate" class="block mb-2">End Date:</label>
+                    <input type="date" id="milestoneEndDate" class="w-full p-2 border rounded mb-4">
+                    <button id="generateMilestoneReport" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Generate Milestone Report</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

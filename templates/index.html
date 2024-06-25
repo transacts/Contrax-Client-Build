@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contrax</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-100 text-gray-800">
+    <header class="flex items-center justify-between p-4 bg-gray-800 text-white">
+        <div class="logo">
+            <img src="{{ url_for('static', filename='images/contrax-logos-03.png') }}" alt="Contrax Logo" class="h-16">
+        </div>
+        <nav class="flex space-x-4">
+            <a href="/pricing" class="text-white hover:text-gray-400 poppins-regular">Pricing</a>
+            <a href="/demo" class="text-white hover:text-gray-400 poppins-regular">Demo</a>
+            <a href="/support" class="text-white hover:text-gray-400 poppins-regular">Support</a>
+            <a href="/login" class="bg-white border border-gray-800 text-gray-500 hover:bg-gray-100 hover:border-gray-700 font-bold py-2 px-4 rounded poppins-regular">
+                Login
+            </a>
+        </nav>
+    </header>
+    <section class="hero-section bg-gray-800 py-6">
+        <div class="flex justify-between items-center max-w-full mx-auto px-4">
+            <div class="w-1/2 text-left">
+                <h1 class="text-4xl font-bold mb-4 text-yellow-400 poppins-bold">Manage Your Construction Projects Effortlessly</h1>
+                <p class="text-lg text-yellow-400 poppins-regular">Contrax helps efficiently manage your construction procurement, ensuring materials are delivered precisely when you need them.</p>
+                <div class="mt-8">
+                    <a href="/about" class="bg-yellow-400 text-gray-800 font-bold py-2 px-4 rounded hover:bg-yellow-500 poppins-bold">Learn More</a>
+                </div>
+            </div>
+            <div class="w-1/2 flex justify-end">
+                <img src="{{ url_for('static', filename='images/cool-lines.png') }}" alt="Cool Lines" class="h-auto w-full">
+            </div>
+        </div>
+    </section>
+    <section class="about-section bg-white py-12 text-center">
+        <h2 class="text-5xl poppins-bold mb-4">Efficient. Collaborative. Simple.</h2>
+        <p class="text-lg text-gray-600 max-w-3xl mx-auto poppins-regular">Contrax provides you with all the tools needed to effectively manage your construction projects, from start to finish.</p>
+    </section>
+    <section class="features-section py-12">
+        <div class="features-grid grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            <div class="feature flex items-center">
+                <img src="{{ url_for('static', filename='images/chat-bubbles.png') }}" alt="Chat Bubbles" class="h-16 w-16 mr-4">
+                <p class="text-gray-600 poppins-regular">One stop shop for the best construction management and communication product</p>
+            </div>
+
+            <div class="feature flex items-center">
+                <img src="{{ url_for('static', filename='images/clockwise-arrow.png') }}" alt="Clockwise Arrow" class="h-16 w-16 mr-4">
+                <p class="text-gray-600 poppins-regular">One stop shop for the best construction management and communication product</p>
+            </div>
+
+            <div class="feature flex items-center">
+                <img src="{{ url_for('static', filename='images/handshake-vector.png') }}" alt="Handshake" class="h-16 w-16 mr-4">
+                <p class="text-gray-600 poppins-regular">One stop shop for the best construction management and communication product</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="about-section bg-white py-12 text-center">
+        <h1 class="text-5xl font-bold mb-4 poppins-bold">Increased productivity, from wherever you are.</h1>
+        <p class="text-lg text-gray-600 max-w-3xl mx-auto poppins-regular">At Contrax, we believe in building strong foundations, not just in construction but also in project management. Our software is designed to empower teams to achieve more with less stress.</p>
+        <div class="flex justify-center mt-6">
+            <img src="{{ url_for('static', filename='images/computer-images.png') }}" alt="Contrax Logo" class="h-96 w-auto">
+        </div>
+    </section>
+
+    <footer class="bg-gray-800 text-white py-12">
+        <div class="max-w-7xl mx-auto px-4 flex justify-between">
+            <div class="w-1/3">
+                <img src="{{ url_for('static', filename='images/contrax-logos-03.png') }}" alt="Contrax Logo" class="h-36">
+                <p class="text-sm text-white-400 poppins-regular">Contrax is a leading provider of construction procurement management solutions. Our platform is designed to streamline project workflows, enhance transparency, and ensure timely delivery of materials. With a commitment to innovation and customer satisfaction, we empower construction professionals to manage their projects more efficiently and effectively.</p>
+            </div>
+            <div class="w-1/3">
+                <h4 class="text-lg font-bold mb-4 poppins-regular">Useful Links</h4>
+                <ul>
+                    <li><a href="/about" class="text-white-400 hover:text-gray-300 poppins-regular">About</a></li>
+                    <li><a href="/products" class="text-white-400 hover:text-gray-300 poppins-regular">Products</a></li>
+                    <li><a href="/support" class="text-white-400 hover:text-gray-300 poppins-regular">Support</a></li>
+                    <li><a href="/demo" class="text-white-400 hover:text-gray-300 poppins-regular">Demo</a></li>
+                    <li><a href="/contact" class="text-white-400 hover:text-gray-300 poppins-regular">Contact</a></li>
+                </ul>
+            </div>
+            <div class="w-1/3">
+                <h4 class="text-lg font-bold mb-4 poppins-regular">Contact</h4>
+                <p class="text-white-400 poppins-regular">info@contrax.com</p>
+                <p class="text-white-400 poppins-regular">123 Any Road, Town City, 12345</p>
+                <p class="text-white-400 poppins-regular">1-800-123-4567</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
